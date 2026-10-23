@@ -11,21 +11,24 @@ Cada ciclo:
   5. Alertas: margen bajo (WARN/CRIT), liquidacion, rebalanceo, funding negativo y fallos de datos.
      Salen por pantalla y en alerts.log; si defines ALERT_WEBHOOK_URL tambien se envian por POST JSON {"text": ...}.
   6. Resumen diario a las 00:00 UTC en daily_summary.csv (y por pantalla/alertas).
+  7. Grafico de PnL (acumulado y por dia) en pnl_chart.html, regenerado cada ciclo: abrelo en el navegador.
 Uso:
   python paper_carry.py                        # ciclo continuo cada 180 s (BTC, ETH, SOL; 100 USD; 3x)
   python paper_carry.py --once                 # un solo ciclo (prueba)
   python paper_carry.py --lev 2 --capital 100 --pairs BTC-USDT,ETH-USDT
   python paper_carry.py --reset                # borra el estado y empieza de cero
   python paper_carry.py --report               # imprime el resumen actual del estado guardado (sin red)
+  python paper_carry.py --chart                # regenera pnl_chart.html desde paper_log.csv (sin red)
 """
 import argparse, csv, datetime, json, os, time
 import requests
 
 from carry_model import MMR, trade_cost
+from pnl_chart import build as build_chart
 
 BASE = "https://openapi.blofin.com/api/v1/market"
 STATE, LOG = "paper_state.json", "paper_log.csv"
-ALERTS, DAILY = "alerts.log", "daily_summary.csv"
+ALERTS, DAILY, CHART = "alerts.log", "daily_summary.csv", "pnl_chart.html"
 WARN_RATIO, CRIT_RATIO = 0.80, 0.65  # margen/objetivo en el maximo del periodo (rebalanceo en 0.6)
 NEG_FUNDING = -0.0001  # funding pendiente por 8h a partir del cual se avisa (el carry paga)
 COOLDOWN_MS = 3_600_000
@@ -240,6 +243,10 @@ def cycle(states, pairs, capital, lev):
                   f"funding {st['funding_net']:+.4f}  ratio {ratio:.2f}  next {st['pending']['rate']:+.4%}  "
                   f"liq {st['liqs']} reb {st['rebal']}  APR~{apr}" + (f"  !! {'; '.join(events)}" if events else ""))
     save_state(states)
+    try:  # el grafico es accesorio: si falla no debe detener el monitoreo
+        build_chart(LOG, CHART)
+    except Exception as ex:
+        print(f"   (grafico no actualizado: {ex})")
 
 
 def main():
@@ -251,7 +258,11 @@ def main():
     ap.add_argument("--once", action="store_true")
     ap.add_argument("--reset", action="store_true")
     ap.add_argument("--report", action="store_true", help="resumen actual del estado guardado (sin red)")
+    ap.add_argument("--chart", action="store_true", help="regenera pnl_chart.html desde paper_log.csv (sin red)")
     a = ap.parse_args()
+    if a.chart:
+        print(build_chart(LOG, CHART))
+        return
     if a.report:
         for p, st in load_state().items():
             if p in a.pairs.split(","):
@@ -259,7 +270,7 @@ def main():
                 print(daily_summary(p, st, price, st["day"], int(time.time() * 1000), write=False))
         return
     if a.reset:
-        for f in (STATE, LOG, ALERTS, DAILY):
+        for f in (STATE, LOG, ALERTS, DAILY, CHART):
             if os.path.exists(f):
                 os.remove(f)
     states, pairs, fails = load_state(), a.pairs.split(","), 0

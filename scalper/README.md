@@ -7,7 +7,8 @@ Nada aqui opera con dinero real ni usa API keys. Todo es backtest, Montecarlo o 
 | `fetch_candles.py`, `fetch_funding.py` | Descargan velas y funding publicos a `data/` (`data/long/` para 1H largo). |
 | `backtest.py`, `research.py`, `tv_test.py` | Backtests de scalping 3m-1H (indicadores clasicos y estrategias publicas de TradingView). Ninguna dio ventaja fuera de muestra. |
 | `funding_research.py`, `carry_model.py` | Carry delta-neutral (spot largo + perp corto): retorno historico, liquidacion, rebalanceo. |
-| `paper_carry.py` | Monitor de paper trading del carry, ciclo de 3 min, alertas de margen, resumen diario (`--report`). |
+| `paper_carry.py` | Monitor de paper trading del carry, ciclo de 3 min, alertas de margen, resumen diario (`--report`) y grafico de PnL `pnl_chart.html` (`--chart`). |
+| `pnl_chart.py` | Grafico HTML autocontenido del PnL (acumulado y por dia UTC), claro/oscuro, con tooltip y tabla. |
 | `montecarlo.py` | Proyecciones Montecarlo del carry (bootstrap por bloques + funding AR(1) + escenarios). |
 
 Montecarlo: `python montecarlo.py --days 30,90 --paths 4000 --validate --goal`
