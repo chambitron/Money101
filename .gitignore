@@ -8,3 +8,4 @@ alerts.log
 daily_summary.csv
 montecarlo_results.csv
 pnl_chart.html
+paper_run.log
