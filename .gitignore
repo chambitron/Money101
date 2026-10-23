@@ -2,3 +2,5 @@ data/
 __pycache__/
 .env
 *.key
+paper_state.json
+paper_log.csv
