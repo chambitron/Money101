@@ -123,7 +123,10 @@ def main():
     rows = []
     for path in sorted(glob.glob("data/*.csv")):
         pair, tf = os.path.basename(path)[:-4].rsplit("_", 1)
-        df = pd.read_csv(path)
+        try:
+            df = pd.read_csv(path)
+        except pd.errors.EmptyDataError:
+            continue
         if len(df) < 1000:
             continue
         cut = int(len(df) * 0.6)
