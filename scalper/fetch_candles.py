@@ -12,7 +12,14 @@ def fetch(inst, bar, total):
         p = {"instId": inst, "bar": bar, "limit": 100}
         if after:
             p["after"] = after
-        r = requests.get(URL, params=p, timeout=20).json()["data"]
+        for attempt in range(5):
+            try:
+                r = requests.get(URL, params=p, timeout=20).json()["data"]
+                break
+            except (requests.RequestException, KeyError, ValueError):
+                time.sleep(2 ** attempt)
+        else:
+            raise RuntimeError("BloFin no responde")
         if not r:
             break
         rows += r
